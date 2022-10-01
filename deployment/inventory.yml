@@ -1,0 +1,3 @@
+all:
+   hosts:
+     wg.uhlig.it:

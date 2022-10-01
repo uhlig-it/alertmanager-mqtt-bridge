@@ -1,0 +1,28 @@
+---
+- name: Deploy the Alertmanager MQTT Bridge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Lookup binary path from artifacts.json
+      ansible.builtin.set_fact:
+        binary_path: "{{ item['path'] }}"
+      when: |
+        item['goos'] is defined and item['goos'] == 'linux'
+        and item['goarch'] is defined and item['goarch'] == 'arm'
+        and item['goarm'] is defined and item['goarm'] == '7'
+        and item['type'] is defined and item['type'] == 'Binary'
+      loop: "{{ lookup('file', playbook_dir + '/../dist/artifacts.json') | from_json }}"
+      tags: [ kiosk, goreleaser, binary, path, artifacts ]
+
+  roles:
+    - role: suhlig.simple_systemd_service
+      vars:
+        program:
+          name: grafana-mqtt-alert-proxy
+          binary: "{{ binary_path }}"
+          description: Alertmanager MQTT Bridge
+          # environment:
+          #   - "MQTT_URL='{{ mqtt_url }}'"
+      become: true

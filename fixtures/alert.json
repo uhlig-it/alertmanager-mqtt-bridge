@@ -1,0 +1,40 @@
+{
+  "receiver": "webhook",
+  "status": "firing",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "__alert_rule_namespace_uid__": "BZWm9R3nl",
+        "__alert_rule_uid__": "f8Xj0c8Vz",
+        "alertname": "My Alert"
+      },
+      "annotations": {
+        "__dashboardUid__": "BZJoObW4v",
+        "__panelId__": "1",
+        "__value_string__": "[ var='B0' metric='something' labels={__name__=my-metric, instance=127.0.0.1:9104, job=node, foo=something} value=1.959 ]"
+      },
+      "startsAt": "2022-10-01T14:40:09.042+02:00",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://localhost:3000/alerting/grafana/f8Xj0c8Vz/view",
+      "fingerprint": "7d78fbbe3b51efe8"
+    }
+  ],
+  "groupLabels": {
+    "alertname": "My Alert"
+  },
+  "commonLabels": {
+    "__alert_rule_namespace_uid__": "BZWm9R3nl",
+    "__alert_rule_uid__": "f8Xj0c8Vz",
+    "alertname": "My Alert"
+  },
+  "commonAnnotations": {
+    "__dashboardUid__": "BZJoObW4v",
+    "__panelId__": "1",
+    "__value_string__": "[ var='B0' metric='something' labels={__name__=my-metric, instance=127.0.0.1:9104, job=node, foo=something} value=1.959 ]"
+  },
+  "externalURL": "http://localhost:9093",
+  "version": "4",
+  "groupKey": "{}:{alertname=\"My Alert\"}",
+  "truncatedAlerts": 0
+}
