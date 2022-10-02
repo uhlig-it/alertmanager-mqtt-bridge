@@ -1,0 +1,8 @@
+---
+name: <%= File.basename(Dir.pwd) %>
+windows:
+  - app:
+      panes:
+      - find . -name '*.go' -or -name '*.tmpl' -type f | entr -r go run . --verbose
+      - mosquitto_sub --url "$(sed s/ssl/mqtts/g <<< "$MQTT_URL")/#" -F %J | jq
+      -

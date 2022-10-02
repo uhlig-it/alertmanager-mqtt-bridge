@@ -5,9 +5,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/jessevdk/go-flags"
 	"github.com/prometheus/alertmanager/notify/webhook"
 )
@@ -40,12 +44,49 @@ func main() {
 	}
 
 	if opts.Verbose {
-		log.Printf("Starting with options: %v\n", opts)
+		fmt.Println(getProgramVersion())
+	}
+
+	mqttURLVar, present := os.LookupEnv("MQTT_URL")
+
+	if !present {
+		fmt.Fprintf(os.Stderr, "Error: Required MQTT_URL not present\n")
+		os.Exit(1)
+	}
+
+	mqttURL, err := url.Parse(mqttURLVar)
+
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	mqttOptions := mqtt.NewClientOptions().
+		AddBroker(mqttURL.String()).
+		SetClientID(getProgramName()).
+		SetUsername(mqttURL.User.Username())
+
+	password, isSet := mqttURL.User.Password()
+
+	if isSet {
+		mqttOptions.SetPassword(password)
+	}
+
+	mqtt.ERROR = log.New(os.Stderr, "", 0)
+	mqttClient := mqtt.NewClient(mqttOptions)
+
+	if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
+		fmt.Fprintf(os.Stderr, "Error: Could not connect to MQTT: %s\n", token.Error())
+		os.Exit(1)
+	}
+
+	if opts.Verbose {
+		fmt.Printf("Connected to MQTT at %s\n", mqttURL.String())
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		message := webhook.Message{}
-		err := json.NewDecoder(r.Body).Decode(&message)
+		alert := webhook.Message{}
+		err := json.NewDecoder(r.Body).Decode(&alert)
 
 		if err != nil {
 			log.Printf("Could not switch to tab: %v", err)
@@ -53,14 +94,49 @@ func main() {
 			return
 		}
 
-		for _, a := range message.Alerts {
-			log.Printf("%v %v", a.Labels["alertname"], a.Status)
+		for _, a := range alert.Alerts {
+			message := struct {
+				Name     string    `json:"name"`
+				Status   string    `json:"status"`
+				StartsAt time.Time `json:"startsAt"`
+				EndsAt   time.Time `json:"endsAt"`
+			}{
+				Name:     a.Labels["alertname"],
+				Status:   a.Status,
+				StartsAt: a.StartsAt,
+				EndsAt:   a.EndsAt,
+			}
+
+			messageJSON, err := json.Marshal(message)
+
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: marshalling the MQTT message failed: %s\n", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+
+			topicPrefix := strings.Replace(mqttURL.Path, "/", "", 1)
+			topic := fmt.Sprintf("%s/%s", topicPrefix, a.Labels["alertname"])
+
+			if token := mqttClient.Publish(topic, 0, false, messageJSON); token.Wait() && token.Error() != nil {
+				fmt.Fprintf(os.Stderr, "Error: publishing the MQTT message failed: %s\n", token.Error())
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+
+			if opts.Verbose {
+				fmt.Printf("Sent to %s: %s\n", topic, messageJSON)
+			}
 		}
 
 		w.WriteHeader(http.StatusCreated)
+		fmt.Fprintln(w, http.StatusText(http.StatusCreated))
 	})
 
-	log.Printf("%v starting at http://%v\n", getProgramVersion(), opts.HttpBindAddress)
+	if opts.Verbose {
+		log.Printf("Starting to listen at http://%v\n", opts.HttpBindAddress)
+	}
+
 	log.Fatal(http.ListenAndServe(opts.HttpBindAddress, nil))
 }
 
@@ -76,5 +152,5 @@ func getProgramName() string {
 }
 
 func getProgramVersion() string {
-	return fmt.Sprintf("%s %s (%s), built on %s\n", getProgramName(), version, commit, date)
+	return fmt.Sprintf("%s %s (%s), built on %s", getProgramName(), version, commit, date)
 }

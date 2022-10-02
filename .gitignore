@@ -1,2 +1,3 @@
-alertmanager-mqtt-bridge
 .vscode
+alertmanager-mqtt-bridge
+dist

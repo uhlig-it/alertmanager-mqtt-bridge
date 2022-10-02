@@ -1,35 +1,35 @@
 # Alertmanager MQTT Bridge
 
-This is a Webhook server converting [Prometheus Alertmanager webhook messages]() into MQTT messages.
+This is a Webhook server converting [Prometheus Alertmanager webhook messages](https://prometheus.io/docs/alerting/latest/configuration/#webhook_config) into MQTT messages.
+
+The MQTT topic is taken from the `MQTT_URL`'s path, and the alert name is appended.
+
+Example: With `MQTT_URL=mqtts://user:password@mqtt.example.com/alerts/grafana`, an alert named "My Alert" is published to `/alerts/grafana/My Alert`.
 
 # Deployment
 
 ```command
-$ cd deployment
-$ ansible-playbook playbook.yml
+$ (cd deployment && ansible-playbook playbook.yml)
 ```
-
-# Manual Test
-
-* `go build`
-* `scp` the binary to the server
-* Set the environment variables:
-  - `MQTT_URL` (required) must point to the MQTT server where the alerts will be published to, incl. the topic as URL path (leading slash will be removed)
-* Start the server
-* Configure AlertManager as external alert manager in Grafana (e.g. 127.0.0.1:9093)
-* Check that the notification arrives:
-
-  ```command
-  $ mosquitto_sub \
-    --url 'mqtt://user:pass@example.com/alerts/+' \
-    -F '\e[92m %I %t: \e[96m%p\e[0m'
-  ```
 
 # Development
 
-* Use `fresh` for fast iteration (`go get github.com/pilu/fresh`)
+* Iterate with [`entr`](https://eradman.com/entrproject/):
+
+  ```command
+  $ find . -name '*.go' -or -name '*.tmpl' -type f | entr -r go run . --verbose
+  ```
+
+* Listen to MQTT messages:
+
+  ```command
+  $ mosquitto_sub --url 'mqtts://user:password@mqtt.example.com/alerts/grafana/#' -F %J | jq
+  ```
+
 * Post a fixture to the running server:
 
   ```command
   $ curl -v localhost:8031 -d @fixtures/alert.json
   ```
+
+Check `.tmuxinator.yml` for an ready-to-launch configuration of the above.
