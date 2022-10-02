@@ -5,7 +5,7 @@
   gather_facts: true
 
   pre_tasks:
-    - name: Build program
+    - name: Program snapshot is up to date
       local_action:
         module: ansible.builtin.command
         cmd: goreleaser --snapshot --rm-dist
@@ -13,7 +13,7 @@
           chdir: "{{ playbook_dir }}/.."
       become: false
 
-    - name: Lookup binary path from artifacts.json
+    - name: Path to binary is set from artifacts.json
       ansible.builtin.set_fact:
         binary_path: "{{ item['path'] }}"
       when: |
