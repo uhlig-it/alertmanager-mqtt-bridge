@@ -89,8 +89,8 @@ func main() {
 		err := json.NewDecoder(r.Body).Decode(&alert)
 
 		if err != nil {
-			log.Printf("Could not switch to tab: %v", err)
-			http.Error(w, "Could not switch to tab", http.StatusInternalServerError)
+			log.Printf("Could not decode alert: %v", err)
+			http.Error(w, "Could not decode alert", http.StatusInternalServerError)
 			return
 		}
 
