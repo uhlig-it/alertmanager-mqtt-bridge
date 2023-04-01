@@ -97,11 +97,13 @@ func main() {
 		for _, a := range alert.Alerts {
 			message := struct {
 				Name     string    `json:"name"`
+				URL      string    `json:"url"`
 				Status   string    `json:"status"`
 				StartsAt time.Time `json:"startsAt"`
 				EndsAt   time.Time `json:"endsAt"`
 			}{
 				Name:     a.Labels["alertname"],
+				URL:      a.GeneratorURL,
 				Status:   a.Status,
 				StartsAt: a.StartsAt,
 				EndsAt:   a.EndsAt,
