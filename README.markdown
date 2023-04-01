@@ -32,4 +32,11 @@ $ (cd deployment && ansible-playbook playbook.yml)
   $ curl -v localhost:8031 -d @fixtures/alert.json
   ```
 
+  If the server is running on a remote host and if it is listening to localhost only, a [self-closing SSH tunnel](https://unix.stackexchange.com/a/83812) helps:
+
+  ```command
+  $ ssh alice@example.com -L 8031:localhost:8031 -f sleep 10 && curl -v localhost:8031 -d @fixtures/alert.json
+  ```
+
+
 Check `.tmuxinator.yml` for an ready-to-launch configuration of the above.
