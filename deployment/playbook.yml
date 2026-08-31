@@ -1,9 +1,7 @@
----
 - name: Deploy the Alertmanager MQTT Bridge
   hosts: all
   become: true
   gather_facts: true
-
   pre_tasks:
     - name: Program snapshot is up to date
       local_action:
@@ -12,7 +10,6 @@
         args:
           chdir: "{{ playbook_dir }}/.."
       become: false
-
     - name: Path to binary is set from artifacts.json
       ansible.builtin.set_fact:
         binary_path: "{{ item['path'] }}"
@@ -22,9 +19,8 @@
         and item['type'] is defined and item['type'] == 'Binary'
       loop: "{{ lookup('file', playbook_dir + '/../dist/artifacts.json') | from_json }}"
       tags: [ kiosk, goreleaser, binary, path, artifacts ]
-
   roles:
-    - role: suhlig.simple_systemd_service
+    - role: uhlig-it.simple_systemd_service
       vars:
         program:
           name: alertmanager-mqtt-proxy
