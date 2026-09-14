@@ -1,5 +1,7 @@
 # Alertmanager MQTT Bridge
 
+> **Note:** This project has been archived and is no longer maintained.
+
 This is a Webhook server converting [Prometheus Alertmanager webhook messages](https://prometheus.io/docs/alerting/latest/configuration/#webhook_config) into MQTT messages.
 
 The MQTT topic is taken from the `MQTT_URL`'s path, and the alert name is appended.
